@@ -5,7 +5,10 @@ $Users = Import-Csv "C:\Scripts\users.csv"
 $Users | ForEach-Object {
 
     $Username = $_.Username
+    $Group = $_.Group
+
     $ExistingUser = Get-ADUser -Filter "SamAccountName -eq '$Username'" -ErrorAction SilentlyContinue
+    
 
     if ($ExistingUser) {
         Write-Host "User $Username already exists"
@@ -26,10 +29,18 @@ $Users | ForEach-Object {
 
     }
 
-    Add-ADGroupMember `
-        -Identity $_.Group `
-        -Members $Username
+    $GroupMembers = Get-ADGroupMember -Identity $Group | Select-Object -ExpandProperty SamAccountName
 
-    Write-Host "User $Username added to group $($_.Group)"
+    if ($GroupMembers -contains $Username) {
+        Write-Host "User $Username already belongs to group $Group"
+    }
+    else {
+
+        Add-ADGroupMember `
+            -Identity $_.Group `
+            -Members $Username
+
+        Write-Host "User $Username added to group $($_.Group)"
+    }
 
 }
